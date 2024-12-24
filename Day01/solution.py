@@ -1,5 +1,7 @@
-def part1(data):
-    # Your solution for part 1
+import pandas as pd
+import os
+
+def part1(data): 
     pass
 
 def part2(data):
@@ -11,6 +13,7 @@ def parse_input(file_path):
         return f.read().splitlines()
 
 if __name__ == "__main__":
-    input_data = parse_input("input.txt")
+    #print(f"Current working directory: {os.getcwd()}")
+    input_data = parse_input("Input.txt")
     print(f"Part 1: {part1(input_data)}")
     print(f"Part 2: {part2(input_data)}")
