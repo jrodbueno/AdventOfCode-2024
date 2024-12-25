@@ -4,34 +4,51 @@ import re
 import os
 import stat
 #from networkx import difference
-
-def part1(reports): 
-    #Determine how many reports are safe if:
+def evaluate_report(report):
+    #Determine if a report is safe if:
     #The levels are either all increasing or all decreasing.
     #Any two adjacent levels differ by at least one and at most three.
+    status = "First"
+    for level in range(len(report)-1):
+        delta = int(report[level+1])-int(report[level])
+        if delta > 0 and delta <= 3 and (status in ("First","Ascending")):
+            status = "Ascending"
+        elif delta < 0 and delta >= -3 and (status in ("First","Descending")):
+            status = "Descending"
+        else:
+            #print("unsafe")
+            status = level+1
+            break
+        if level == len(report)-2:
+            status = "Safe"
+    return status
+
+def part1(reports): 
     #print(reports)
     safeReports = 0
-    delta = 0
     for report in reports:
-        status = "First"
-        for level in range(len(report)-1):
-            delta = int(report[level+1])-int(report[level])
-            if delta > 0 and delta <= 3 and (status in ("First","Ascending")):
-                status = "Ascending"
-            elif delta < 0 and delta >= -3 and (status in ("First","Descending")):
-                status = "Descending"
-            else:
-                #print("unsafe")
-                status = "Unsafe"
-                break
-            if level == len(report)-2:
-                #print("safe!")
-                safeReports += 1
+        if evaluate_report(report) == "Safe":
+            safeReports += 1
     return safeReports
 
 def part2(reports):
-    #Find simmilarity score
-    pass
+    #Determine how many reports are safe if you can skip one level
+    #print(reports)
+    safeReports = 0
+    for report in reports:
+        eval = evaluate_report(report)
+        if eval == "Safe":
+            safeReports += 1
+            continue
+        else:
+            for index in range(len(report)):
+                newreport = report.copy()
+                del newreport[index]
+                eval = evaluate_report(newreport)
+                if eval == "Safe":
+                    safeReports += 1
+                    break
+    return safeReports
 
 def parse_input(file_path):
     #Read File into a list, one item per line
