@@ -11,7 +11,7 @@ def part2(input):
     pass
 
 def parse_input(file_path):
-    #Read File into a list, one item per line
+    #Read File into a list, one item per linegi
     with open(file_path) as f:
         data = f.read().splitlines()
     #print(data)
