@@ -6,14 +6,14 @@ def check_print (dict,printset):
     value = printset.pop(0)
     if value not in dict:
         #print("Value not in dictionary")
-        return False
+        return False,0,0
     if len(printset) == 0:
         #print(f"last item: {value}")
-        return True
+        return True,0,0
     for item in printset:
         if item in dict[value]:
             #print(f"Broken instruction: {printset},value: {value}, item: {item}")
-            return False
+            return False, value, item
     return check_print(dict,printset)
 
 def part1(instructions,prints): 
@@ -21,7 +21,8 @@ def part1(instructions,prints):
     inst_dict = build_instruction_dict(instructions)
     for printset in prints:
         #print(f"Starting validation: {printset}")
-        if check_print (inst_dict,printset.copy()):
+        eval = check_print (inst_dict,printset.copy())
+        if eval[0]:
             #print(f"valid print set: {printset}")
             index = len(printset)
             if index%2 ==0:
@@ -30,11 +31,42 @@ def part1(instructions,prints):
                 sum += (printset[index] + printset[index-1])/2
             else:
                 index = int(index/2)
-                sum += int(printset[index])
+                sum += int(printset[index])  
     return sum
 
-def part2(input):
-    pass
+def part2(instructions,prints):
+    sum = 0
+    inst_dict = build_instruction_dict(instructions)
+    for printset in prints:
+        #print(f"Starting validation: {printset}")
+        eval = check_print (inst_dict,printset.copy())
+        if eval[0]:
+            #print(f"valid print set: {printset}")
+            continue
+        else:
+            #fix the order
+            falsevalitem = check_print (inst_dict,printset.copy())
+            flag = falsevalitem[0]
+            value = falsevalitem[1]
+            item = falsevalitem[2]
+            while flag == False:
+                print(printset)
+                item = printset.pop(printset.index(item))
+                printset.insert(printset.index(value),item)
+                print(printset)
+                falsevalitem = check_print (inst_dict,printset.copy())
+                flag = falsevalitem[0]
+                value = falsevalitem[1]
+                item = falsevalitem[2]
+            index = len(printset)
+            if index%2 ==0:
+                #print(printset)
+                index = index/2
+                sum += (printset[index] + printset[index-1])/2
+            else:
+                index = int(index/2)
+                sum += int(printset[index]) 
+    return sum
 
 def parse_input(file_path):
     #Read File into a list, one item per linegi
@@ -77,4 +109,4 @@ if __name__ == "__main__":
     instructions = get_instructions(input_data)
     prints = get_prints(input_data)
     print(f"Part 1: {part1(instructions,prints)}")
-    print(f"Part 2: {part2(input_data)}")
+    print(f"Part 2: {part2(instructions,prints)}")
