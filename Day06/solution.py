@@ -5,7 +5,8 @@ import csv
 import os
 import sys
 from xml.sax.saxutils import prepare_input_source
-sys.setrecursionlimit(15000)
+from copy import deepcopy
+sys.setrecursionlimit(150000)
 
 #otro enfoque es poner los # para crear el loop
 # y leer si el guardia ya estuvo allí 
@@ -33,7 +34,6 @@ def move (map, loc = [0,0], dir = [1,0], obstacle = '#',count=0):
         #print(count)
     if map[loc[0] + dir[0]][loc[1] + dir[1]] == obstacle:
         dir = turn_right(dir)
-    else:
         map[loc[0]][loc[1]] = "X"
         loc = [loc[0] + dir[0],loc[1] + dir[1]]
        # print(f"{loc} | {dir} | {count}")
@@ -55,8 +55,16 @@ def part1(map):
     guard = '^'
     obstacle = '#'
     direction = [-1,0]
-    guard_loc = find_guard(map,guard)
-    movement = move(map,guard_loc,direction,obstacle, count)
+    loc = find_guard(map,guard)
+    bounds = [len(map)-1,len(map[1])-1]
+    while (loc[0]+direction[0]) <= bounds[0] and (loc[1] + direction[1]) <= bounds[1]:
+        #Si no ha tenido el primer contacto, no podemos poner obstáculo
+        map[loc[0]][loc[1]] = 'X'
+        if map[loc[0]+direction[0]][loc[1] + direction[1]] == obstacle:
+            direction = turn_right(direction)
+        else:
+            loc = [loc[0]+direction[0],loc[1]+direction[1]]
+            map[loc[0]][loc[1]] = 'X'
     with open('output.csv', 'w', newline='') as file:
         writer = csv.writer(file)
         writer.writerows(map)
@@ -75,17 +83,18 @@ def part2(map,path):
     successful = []
     direction = [-1,0]
     bounds = [len(map)-1,len(map[1])-1]
-    loc = find_guard(map,guard)
     #loop setup
     obstacle_location = []
-    #Me falta un loop para saber si ya acabamos
-    loopmap = map.copy()
+    loopmap = deepcopy(map)
+    guard_loc = find_guard(map,guard)
     while count > 0:
         count = 0
+        crashes = {}
         firstCrash = False
         loop = False
         placed = False
         loopCount = 0
+        loc = guard_loc
         #RESOLVER EL LABERINTO
         while (loc[0]+direction[0]) <= bounds[0] and (loc[1] + direction[1]) <= bounds[1] and not loop:
             #Si ya chocó, podemos poner obstáculo, siempre y cuando no lo hayamos intentado antes
@@ -93,7 +102,6 @@ def part2(map,path):
                 #Escoger la siguiente posición posible
                 loopmap[loc[0]+direction[0]][loc[1] + direction[1]] = obstacle
                 #Guarda la posición en una lista de intentos
-                obstacle_location = [loc[0]+direction[0],loc[1] + direction[1]]
                 obstacles.append([loc[0]+direction[0],loc[1] + direction[1]])
                 placed = True
             #Si no ha tenido el primer contacto, no podemos poner obstáculo
@@ -102,26 +110,46 @@ def part2(map,path):
             loopmap[loc[0]][loc[1]] = 'X'
             if loopmap[loc[0]+direction[0]][loc[1] + direction[1]] == obstacle:
                 #Si choca con un obstaculo, puede ser el que pusimos
-                if [loc[0]+direction[0],loc[1] + direction[1]] == obstacle_location:
-                    #La primera vez que se pone el obstaculo, rebota y no genera un loop
-                    print("choque con obstaculo externo")
-                    loopCount += 1
-                    if loopCount > 1:
-                        print("Loop!")
-                        loop = True
-                        break
-                #Si no, hay que cambiar la dirección y actuar normal
+                obstacle_location = f"{loc[0]+direction[0]}, {loc[1] + direction[1]}"
+                if obstacle_location not in crashes:
+                    crashes[obstacle_location] = direction
+                    if len(direction) == 0:
+                        continue
+                    #print(crashes)
+                else:
+                    #print(f"{crashes[obstacle_location]}| {direction}")
+                    #print(crashes)
+                    if direction in crashes[obstacle_location]:
+                        loopCount += 1
+                        if loopCount > 1:
+                            print(f"Loop! {obstacle_location}")
+                            loop = True
+                            break 
+                    else: 
+                        aux = [crashes[obstacle_location]]
+                        aux.append(direction)
+                        crashes[obstacle_location] = aux
                 direction = turn_right(direction)
                 firstCrash = True   
             else:
                 loc = [loc[0]+direction[0],loc[1]+direction[1]]
                 if firstCrash == True:
-                    breakpoint()
                     path[loc[0]][loc[1]] = 'Y'
                 #print(f"{loc[0]},{loc[1]} | {direction[0],direction[1]} | {bounds}")
                 loopmap[loc[0]][loc[1]] = 'X'
                 if firstCrash == True:
                     path[loc[0]][loc[1]] = 'Y'
+            
+        with open('path.csv', 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerows(path)
+        with open('map.csv', 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerows(map)
+        with open('loopmap.csv', 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerows(loopmap)
+            
         if loop:
             successful.append(obstacle_location)
         for row in path:
@@ -130,9 +158,6 @@ def part2(map,path):
                     count +=1
         #print(count)
         print(obstacles)
-        with open('output3.csv', 'w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerows(path)
 
 
             
